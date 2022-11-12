@@ -27,23 +27,24 @@ impl Ship {
             thrust: 0.002,
             engine_on: false,
             angle: -1.5,
-            fuel: 100.0,
+            fuel: 80.0,
             destroyed: false,
         }
     }
 
     pub fn update(&mut self, pressed: u8, gravity: f64) {
         if pressed & wasm4::BUTTON_RIGHT != 0 {
-            self.angle += 0.4;
+            self.angle += 0.3;
         }
         if pressed & wasm4::BUTTON_LEFT != 0 {
-            self.angle -= 0.4;
+            self.angle -= 0.3;
         }
 
         if self.engine_on {
             self.velocity.x += self.thrust * self.angle.cos();
             self.velocity.y += self.thrust * self.angle.sin();
             self.fuel -= 0.2;
+            wasm4::tone(100, 4, 20, wasm4::TONE_NOISE);
         }
 
         self.velocity.y += gravity;
@@ -53,6 +54,10 @@ impl Ship {
 
     pub fn set_engines(&mut self, state: bool) {
         self.engine_on = state;
+        if self.fuel <= 0.0 {
+            self.engine_on = false;
+            self.fuel = 0.0;
+        }
     }
 
     pub fn get_fuel(&self) -> f64 {

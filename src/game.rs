@@ -15,7 +15,7 @@ pub struct Game {
     ship: ship::Ship,
 }
 
-const GRAV: f64 = 0.0006;
+const GRAV: f64 = 0.0007;
 
 impl Game {
     pub fn new() -> Self {
@@ -23,7 +23,7 @@ impl Game {
             frame_count: 0,
             prev_gamepad: 0,
             is_game_over: false,
-            is_title_screen: false,
+            is_title_screen: true,
             surface: surface::Surface::new(),
             camera_x: 0,
             ship: ship::Ship::new(),
@@ -47,7 +47,10 @@ impl Game {
                 self.is_title_screen = false;
             }
 
-            gfx::shadow_text("WASM LANDER", 20, 20, 0x4, 0x2);
+            gfx::shadow_text("WASM LANDER", 40, 20, 0x4, 0x2);
+            gfx::shadow_text("Press X for thrust", 3, 40, 0x4, 0x2);
+            gfx::shadow_text("Left/Right to turn", 3, 50, 0x4, 0x2);
+            gfx::shadow_text("PRESS X TO START", 3, 70, 0x4, 0x2);
             return;
         }
 
@@ -65,10 +68,8 @@ impl Game {
         self.surface.draw(self.camera_x, 0);
         self.ship.draw(&self.surface);
 
-        if self.ship.get_fuel() <= 0.0 {
-            self.is_game_over = true;
-        }
         if self.ship.is_destroyed() {
+            wasm4::tone(200, 50, 80, wasm4::TONE_NOISE);
             self.is_game_over = true;
         }
 
