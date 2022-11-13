@@ -9,8 +9,7 @@ pub struct Game {
     is_game_over: bool,
     is_title_screen: bool,
     surface: surface::Surface,
-    camera_x: i32,
-
+    //camera_x: i32,
     ship: ship::Ship,
 }
 
@@ -24,7 +23,7 @@ impl Game {
             is_game_over: false,
             is_title_screen: true,
             surface: surface::Surface::new(0),
-            camera_x: 0,
+            //camera_x: 0,
             ship: ship::Ship::new(),
         }
     }
@@ -74,7 +73,7 @@ impl Game {
         );
 
         self.ship.update(GRAV);
-        self.surface.draw(self.camera_x, 0);
+        self.surface.draw(self.ship.get_pos().x as i32 - 80, 0);
         self.ship.draw(&self.surface);
 
         if self.ship.destroyed {

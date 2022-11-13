@@ -82,6 +82,10 @@ impl Ship {
         self.fuel
     }
 
+    pub fn get_pos(&self) -> Point {
+        self.pos
+    }
+
     pub fn get_speed(&self) -> f64 {
         let mag = self.velocity.x * self.velocity.x + self.velocity.y * self.velocity.y;
         mag.sqrt()
@@ -98,7 +102,7 @@ impl Ship {
 
             flame.scale(1.0);
             flame.rotate(self.angle);
-            flame.translate(self.pos.x, self.pos.y);
+            flame.translate(80.0, self.pos.y);
             flame.draw(0x4);
         }
     }
@@ -107,11 +111,16 @@ impl Ship {
         let mut p = self.parts.get(name).unwrap().clone();
         p.scale(1.0);
         p.rotate(self.angle);
-        p.translate(self.pos.x, self.pos.y);
-        p.draw(color);
 
+        // Check collision with surface in "world" coordinates
+        p.translate(self.pos.x, self.pos.y);
         if p.check_collision(surface) {
             self.destroyed = true;
         }
+
+        // Draw in "screen" coordinates
+        p.translate(-self.pos.x + 80.0, 0.0);
+
+        p.draw(color);
     }
 }
