@@ -2,6 +2,7 @@
 mod alloc;
 mod game;
 mod gfx;
+mod polygon;
 mod ship;
 mod surface;
 mod wasm4;

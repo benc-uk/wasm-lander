@@ -1,45 +1,63 @@
-use crate::gfx;
+use crate::polygon;
+use crate::polygon::Point;
 use crate::surface::Surface;
 use crate::wasm4;
-use cgmath::*;
+use std::collections::HashMap;
 
 pub struct Ship {
-    ship_points: [Point2<f64>; 3],
-    pos: cgmath::Point2<f64>,
-    velocity: cgmath::Vector2<f64>,
-    angle: f64,
+    pub destroyed: bool,
+    pub angle: f64,
+
+    parts: HashMap<String, polygon::Polygon>,
+    pos: polygon::Point,
+    velocity: polygon::Point,
     thrust: f64,
     engine_on: bool,
     fuel: f64,
-    destroyed: bool,
 }
 
 impl Ship {
     pub fn new() -> Self {
+        let mut body = polygon::Polygon::new();
+        body.add_point(-3.0, 4.0);
+        body.add_point(4.0, 2.5);
+        body.add_point(4.0, -2.5);
+        body.add_point(-3.0, -4.0);
+
+        let mut flame = polygon::Polygon::new();
+        flame.add_point(-4.0, 1.5);
+        flame.add_point(-10.0, 0.0);
+        flame.add_point(-4.0, -1.5);
+
+        let mut leg1 = polygon::Polygon::new();
+        leg1.add_point(-3.0, 4.0);
+        leg1.add_point(-6.0, 5.0);
+        leg1.add_point(-3.0, 3.0);
+
+        let mut leg2 = polygon::Polygon::new();
+        leg2.add_point(-3.0, -4.0);
+        leg2.add_point(-6.0, -5.0);
+        leg2.add_point(-3.0, -3.0);
+
+        let mut parts_map = HashMap::new();
+        parts_map.insert("body".to_string(), body);
+        parts_map.insert("leg1".to_string(), leg1);
+        parts_map.insert("leg2".to_string(), leg2);
+        parts_map.insert("flame".to_string(), flame);
+
         Self {
-            ship_points: [
-                Point2::new(0.0, -2.0),
-                Point2::new(5.0, 0.0),
-                Point2::new(0.0, 2.0),
-            ],
-            pos: cgmath::Point2::new(80.0, 20.0),
-            velocity: cgmath::Vector2::new(0.0, 0.0),
+            parts: parts_map,
+            pos: Point::new(5.0, 20.0),
+            velocity: Point::new(0.12, 0.0),
             thrust: 0.002,
             engine_on: false,
-            angle: -1.5,
-            fuel: 80.0,
+            angle: 0.0,
+            fuel: 180.0,
             destroyed: false,
         }
     }
 
-    pub fn update(&mut self, pressed: u8, gravity: f64) {
-        if pressed & wasm4::BUTTON_RIGHT != 0 {
-            self.angle += 0.3;
-        }
-        if pressed & wasm4::BUTTON_LEFT != 0 {
-            self.angle -= 0.3;
-        }
-
+    pub fn update(&mut self, gravity: f64) {
         if self.engine_on {
             self.velocity.x += self.thrust * self.angle.cos();
             self.velocity.y += self.thrust * self.angle.sin();
@@ -64,46 +82,36 @@ impl Ship {
         self.fuel
     }
 
-    pub fn is_destroyed(&self) -> bool {
-        self.destroyed
+    pub fn get_speed(&self) -> f64 {
+        let mag = self.velocity.x * self.velocity.x + self.velocity.y * self.velocity.y;
+        mag.sqrt()
     }
 
     pub fn draw(&mut self, surface: &Surface) {
-        let rot: cgmath::Basis2<f64> = cgmath::Rotation2::from_angle(Rad(self.angle));
-
-        // Draw ship
-        gfx::set_draw_color(0x3);
-        for i in 0..2 {
-            let p1 = rot.rotate_point(self.ship_points[i as usize]);
-            let p2 = rot.rotate_point(self.ship_points[i + 1 as usize]);
-            wasm4::line(
-                (p1.x + self.pos.x) as i32,
-                (p1.y + self.pos.y) as i32,
-                (p2.x + self.pos.x) as i32,
-                (p2.y + self.pos.y) as i32,
-            );
-
-            let c1 = surface.check_collision(p1.x + self.pos.x, p1.y + self.pos.y);
-            if c1 {
-                self.destroyed = true;
-            }
-            let c2 = surface.check_collision(p2.x + self.pos.x, p2.y + self.pos.y);
-            if c2 {
-                self.destroyed = true;
-            }
-        }
+        self.draw_part("body", surface, 0x3);
+        self.draw_part("leg1", surface, 0x2);
+        self.draw_part("leg2", surface, 0x2);
 
         // Thruster flame
         if self.engine_on {
-            gfx::set_draw_color(0x4);
-            let mut p1 = cgmath::Point2::new(-3.0, 0.0);
-            p1 = rot.rotate_point(p1);
-            wasm4::line(
-                (p1.x + self.pos.x) as i32,
-                (p1.y + self.pos.y) as i32,
-                (self.pos.x) as i32,
-                (self.pos.y) as i32,
-            );
+            let mut flame = self.parts.get("flame").unwrap().clone();
+
+            flame.scale(1.0);
+            flame.rotate(self.angle);
+            flame.translate(self.pos.x, self.pos.y);
+            flame.draw(0x4);
+        }
+    }
+
+    fn draw_part(&mut self, name: &str, surface: &Surface, color: u16) {
+        let mut p = self.parts.get(name).unwrap().clone();
+        p.scale(1.0);
+        p.rotate(self.angle);
+        p.translate(self.pos.x, self.pos.y);
+        p.draw(color);
+
+        if p.check_collision(surface) {
+            self.destroyed = true;
         }
     }
 }

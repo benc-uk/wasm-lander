@@ -4,7 +4,6 @@ use crate::surface;
 use crate::wasm4;
 
 pub struct Game {
-    //rng: Rng,
     frame_count: u32,
     prev_gamepad: u8,
     is_game_over: bool,
@@ -24,7 +23,7 @@ impl Game {
             prev_gamepad: 0,
             is_game_over: false,
             is_title_screen: true,
-            surface: surface::Surface::new(),
+            surface: surface::Surface::new(0),
             camera_x: 0,
             ship: ship::Ship::new(),
         }
@@ -32,10 +31,9 @@ impl Game {
 
     pub fn new_game(&mut self) {
         self.is_game_over = false;
-        self.frame_count = 0;
         self.prev_gamepad = 0;
-        self.surface.set_heights();
         self.ship = ship::Ship::new();
+        self.surface = surface::Surface::new(self.frame_count);
     }
 
     pub fn update(&mut self) {
@@ -58,23 +56,31 @@ impl Game {
             if pressed & wasm4::BUTTON_1 != 0 {
                 self.is_title_screen = true;
             }
-            gfx::shadow_text("GAME OVER!", 20, 20, 0x4, 0x2);
+
+            gfx::shadow_text("YOU CRASHED!", 30, 60, 0x4, 0x1);
+            gfx::shadow_text("GAME OVER!", 40, 70, 0x4, 0x1);
             return;
         }
 
         self.frame_count += 1;
 
-        self.ship.update(pressed, GRAV);
+        gfx::set_draw_color(0x2);
+        wasm4::text(format!("FUEL: {:.1}", self.ship.get_fuel()), 0, 0);
+        wasm4::text(format!("SPED: {:.1}", self.ship.get_speed() * 100.0), 0, 10);
+        wasm4::text(
+            format!("ANG: {:.1}", self.ship.angle.to_degrees() + 90.0),
+            90,
+            0,
+        );
+
+        self.ship.update(GRAV);
         self.surface.draw(self.camera_x, 0);
         self.ship.draw(&self.surface);
 
-        if self.ship.is_destroyed() {
+        if self.ship.destroyed {
             wasm4::tone(200, 50, 80, wasm4::TONE_NOISE);
             self.is_game_over = true;
         }
-
-        gfx::set_draw_color(0x2);
-        wasm4::text(format!("FUEL: {:.1}", self.ship.get_fuel()), 0, 0);
     }
 
     pub fn input(&mut self) -> u8 {
@@ -86,7 +92,15 @@ impl Game {
             self.ship.set_engines(true);
         }
 
+        if gamepad & wasm4::BUTTON_RIGHT != 0 {
+            self.ship.angle += 0.01;
+        }
+
+        if gamepad & wasm4::BUTTON_LEFT != 0 {
+            self.ship.angle -= 0.01;
+        }
+
         self.prev_gamepad = gamepad;
-        return just_pressed;
+        just_pressed
     }
 }
