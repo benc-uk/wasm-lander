@@ -16,7 +16,7 @@ lazy_static! {
 
 #[no_mangle]
 fn start() {
-    gfx::set_palette([0x051f39, 0x4a2480, 0xc53a9d, 0xff8e80]);
+    gfx::set_palette([0x000000, 0x004400, 0x008800, 0x00ff00]);
     GAME.lock().expect("").new_game();
 }
 

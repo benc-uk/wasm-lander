@@ -47,7 +47,7 @@ impl Ship {
 
         Self {
             parts: parts_map,
-            pos: Point::new(5.0, 20.0),
+            pos: Point::new(500.0, 20.0),
             velocity: Point::new(0.12, 0.0),
             thrust: 0.002,
             engine_on: false,
