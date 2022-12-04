@@ -37,15 +37,15 @@ impl Game {
         let pressed = self.input();
 
         if self.is_title_screen {
-            if pressed & wasm4::BUTTON_1 != 0 {
+            if pressed & wasm4::BUTTON_1 != 0 || pressed & wasm4::BUTTON_2 != 0 {
                 self.new_game();
                 self.is_title_screen = false;
             }
 
-            gfx::shadow_text("WASM LANDER", 40, 20, 0x4, 0x2);
-            gfx::shadow_text("Press X for thrust", 3, 40, 0x4, 0x2);
-            gfx::shadow_text("Left/Right to turn", 3, 50, 0x4, 0x2);
-            gfx::shadow_text("PRESS X TO START", 3, 70, 0x4, 0x2);
+            gfx::shadow_text("WASM LANDER", 37, 20, 0x4, 0x2);
+            gfx::shadow_text("Press X for thrust", 8, 40, 0x4, 0x2);
+            gfx::shadow_text("Left/Right to turn", 8, 50, 0x4, 0x2);
+            gfx::shadow_text("PRESS BUTTON\n  TO START", 33, 90, 0x4, 0x2);
             return;
         }
 
@@ -62,10 +62,10 @@ impl Game {
         self.frame_count += 1;
 
         gfx::set_draw_color(0x2);
-        wasm4::text(format!("FUEL: {:.1}", self.ship.get_fuel()), 0, 0);
-        wasm4::text(format!("SPED: {:.1}", self.ship.get_speed() * 100.0), 0, 10);
+        wasm4::text(format!("F: {:.1}", self.ship.get_fuel()), 0, 0);
+        wasm4::text(format!("S: {:.1}", self.ship.get_speed() * 100.0), 0, 10);
         wasm4::text(
-            format!("ANG: {:.1}", self.ship.angle.to_degrees() + 90.0),
+            format!("A: {:.1}", self.ship.angle.to_degrees() + 90.0),
             90,
             0,
         );
@@ -75,7 +75,7 @@ impl Game {
         self.ship.draw(&self.surface);
 
         if self.ship.destroyed {
-            wasm4::tone(200, 50, 80, wasm4::TONE_NOISE);
+            wasm4::tone(160, 50, 50, wasm4::TONE_NOISE);
             self.is_game_over = true;
         }
     }

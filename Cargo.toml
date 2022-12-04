@@ -10,7 +10,7 @@ crate-type = ["cdylib"]
 [dependencies]
 buddy-alloc = { version = "0.4.1", optional = true }
 lazy_static = "1.4.0"
-#fastrand = "1.8.0"
+    fastrand = "1.8.0"
 noise = "0.8"
 
 [profile.release]
