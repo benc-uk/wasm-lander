@@ -146,7 +146,7 @@ impl Ship {
             self.destroyed = true;
         }
 
-        // Draw in "screen" coordinates
+        // Draw poly in screen coordinates, by translating back
         p.translate(-self.pos.x + 80.0, 0.0);
 
         p.draw(color);
