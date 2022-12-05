@@ -1,23 +1,34 @@
 use crate::gfx;
 use crate::wasm4;
-//use lerp::Lerp;
+use fastrand::Rng;
 use noise::{NoiseFn, Perlin};
 
 pub struct Surface {
     noise: Perlin,
+    pad_locations: [i32; PAD_COUNT],
 }
 
+const PAD_COUNT: usize = 8;
 const SCREEN_SZ: i32 = 160;
 const Y: f64 = 183.8;
 const HIGH: f64 = 100.0;
 const SMOOTH: f64 = 20.0;
-const STEP: i32 = 12;
+const STEP: i32 = 8;
 
 impl Surface {
     pub fn new(seed: u32) -> Self {
-        Self {
+        let rng = Rng::with_seed(seed as u64);
+        let mut surface = Surface {
             noise: Perlin::new(seed),
+            pad_locations: [0; PAD_COUNT],
+        };
+
+        // randomize pad locations
+        for i in 0..PAD_COUNT {
+            surface.pad_locations[i] = rng.i32(100..185) * STEP as i32;
         }
+
+        surface
     }
 
     pub fn draw(&mut self, x_offset: i32) {
@@ -26,6 +37,13 @@ impl Surface {
             let x2 = round_to_limit(x + x_offset, STEP);
             let h1 = self.get_height(x1 as f64);
             let h2 = self.get_height(x2 as f64);
+
+            // check if we need to draw a pad
+            if self.pad_locations.contains(&x1) {
+                gfx::set_draw_color(4);
+                wasm4::rect(x1 - x_offset, SCREEN_SZ - h1 as i32, STEP as u32, 2);
+                continue;
+            }
 
             gfx::set_draw_color(3);
             wasm4::line(
@@ -57,7 +75,21 @@ impl Surface {
     }
 
     fn get_height(&self, x: f64) -> f64 {
-        (self.noise.get([x / SMOOTH, Y]) + 1.0) / 2.0 * HIGH
+        let mut x_pos = x;
+
+        // Stuff to make pads work and join up
+        for i in 0..PAD_COUNT {
+            if x == (self.pad_locations[i] + STEP) as f64 {
+                x_pos = x - STEP as f64;
+                break;
+            }
+        }
+
+        // if x == (self.pad_locations[0] + STEP) as f64 {
+        //     x_pos = x - STEP as f64;
+        // }
+
+        (self.noise.get([x_pos / SMOOTH, Y]) + 1.0) / 2.0 * HIGH
     }
 }
 

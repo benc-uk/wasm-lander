@@ -63,7 +63,8 @@ impl Game {
 
         gfx::set_draw_color(0x2);
         wasm4::text(format!("F: {:.1}", self.ship.get_fuel()), 0, 0);
-        wasm4::text(format!("S: {:.1}", self.ship.get_speed() * 100.0), 0, 10);
+        // wasm4::text(format!("S: {:.1}", self.ship.get_speed() * 100.0), 0, 10);
+        wasm4::text(format!("S: {:.1}", self.ship.get_pos().x), 0, 10);
         wasm4::text(
             format!("A: {:.1}", self.ship.angle.to_degrees() + 90.0),
             90,
@@ -75,6 +76,11 @@ impl Game {
         self.ship.draw(&self.surface);
 
         if self.ship.destroyed {
+            wasm4::trace(format!(
+                "ship at {} {}",
+                self.ship.get_pos().x,
+                self.ship.get_pos().y
+            ));
             wasm4::tone(160, 50, 50, wasm4::TONE_NOISE);
             self.is_game_over = true;
         }
