@@ -1,108 +1,78 @@
 use crate::gfx;
 use crate::wasm4;
-use fastrand::Rng;
-use noise::{NoiseFn, Perlin};
+use noilib_simple::NoiseGenerator;
 
 pub struct Surface {
-    noise: Perlin,
-    pad_locations: [i32; PAD_COUNT],
+    noise: NoiseGenerator,
+    pad_locations: [f32; PAD_COUNT],
+    heights: [u8; SCREEN_SZ as usize],
+    pub scale: f32,
 }
 
-const PAD_COUNT: usize = 8;
+const PAD_COUNT: usize = 1;
+const PAD_SZ: f32 = 0.4;
 const SCREEN_SZ: i32 = 160;
-const Y: f64 = 183.8;
-const HIGH: f64 = 100.0;
-const SMOOTH: f64 = 20.0;
-const STEP: i32 = 8;
+const Y: f32 = 183.8;
+const HIGH: f32 = 150.0;
+const SMOOTH: f32 = 40.0;
 
 impl Surface {
     pub fn new(seed: u32) -> Self {
-        let rng = Rng::with_seed(seed as u64);
         let mut surface = Surface {
-            noise: Perlin::new(seed),
-            pad_locations: [0; PAD_COUNT],
+            noise: NoiseGenerator::new(seed as u64),
+            pad_locations: [0.0; PAD_COUNT],
+            scale: 1.0,
+            heights: [0; SCREEN_SZ as usize],
         };
 
         // randomize pad locations
         for i in 0..PAD_COUNT {
-            surface.pad_locations[i] = rng.i32(100..185) * STEP as i32;
+            surface.pad_locations[i] = 8.0;
         }
 
         surface
     }
 
-    pub fn draw(&mut self, x_offset: i32) {
-        for x in (0..SCREEN_SZ + STEP).step_by(STEP as usize) {
-            let x1 = round_to_limit(x + x_offset, -STEP);
-            let x2 = round_to_limit(x + x_offset, STEP);
-            let h1 = self.get_height(x1 as f64);
-            let h2 = self.get_height(x2 as f64);
+    pub fn draw(&mut self, x_offset: f32, y_offset: f32) {
+        let zoom = SMOOTH * self.scale;
 
-            // check if we need to draw a pad
-            if self.pad_locations.contains(&x1) {
-                gfx::set_draw_color(4);
-                wasm4::rect(x1 - x_offset, SCREEN_SZ - h1 as i32, STEP as u32, 2);
-                continue;
+        for x in 0..SCREEN_SZ {
+            let x_zoom = (x_offset / SMOOTH) + ((x as f32 - 80.0) / zoom);
+            let mut h = ((self.noise.perlin(x_zoom, Y) + 1.0) / 2.0) * HIGH * self.scale;
+            h = h + y_offset - 50.0;
+
+            // check if we're on a pad
+            let mut is_pad = false;
+            for i in 0..PAD_COUNT {
+                if (x_zoom > self.pad_locations[i]) && (x_zoom < self.pad_locations[i] + PAD_SZ) {
+                    let mut pad_h = ((self.noise.perlin(self.pad_locations[i] + PAD_SZ, Y) + 1.0)
+                        / 2.0)
+                        * HIGH
+                        * self.scale;
+                    pad_h = pad_h + y_offset - 50.0;
+                    h = pad_h;
+                    is_pad = true;
+                }
             }
+            self.heights[x as usize] = h as u8;
 
-            gfx::set_draw_color(3);
-            wasm4::line(
-                x1 - x_offset,
-                SCREEN_SZ - h1 as i32,
-                x2 - x_offset,
-                SCREEN_SZ - h2 as i32,
-            );
+            gfx::set_draw_color(2);
+            wasm4::line(x, SCREEN_SZ, x, SCREEN_SZ - h as i32);
+
+            if is_pad {
+                gfx::set_draw_color(4);
+                wasm4::rect(x, SCREEN_SZ - h as i32, 1, 1);
+                wasm4::rect(x, 162 - h as i32, 1, 1);
+            }
         }
     }
 
     pub fn check_collision(&self, x: f64, y: f64) -> bool {
-        let x1 = round_to_limit(x as i32, -STEP);
-        let x2 = round_to_limit(x as i32, STEP);
-        let h1 = self.get_height(x1 as f64);
-        let h2 = self.get_height(x2 as f64);
-
-        if h1 < h2 {
-            if y > SCREEN_SZ as f64 - lerp(h1, h2, (x - x1 as f64) / (x2 - x1) as f64) {
-                return true;
-            }
-        } else {
-            if y > SCREEN_SZ as f64 - lerp(h2, h1, (x - x2 as f64) / (x1 - x2) as f64) {
-                return true;
-            }
+        let h = self.heights[x as usize];
+        if y > SCREEN_SZ as f64 - h as f64 {
+            return true;
         }
 
         return false;
     }
-
-    fn get_height(&self, x: f64) -> f64 {
-        let mut x_pos = x;
-
-        // Stuff to make pads work and join up
-        for i in 0..PAD_COUNT {
-            if x == (self.pad_locations[i] + STEP) as f64 {
-                x_pos = x - STEP as f64;
-                break;
-            }
-        }
-
-        // if x == (self.pad_locations[0] + STEP) as f64 {
-        //     x_pos = x - STEP as f64;
-        // }
-
-        (self.noise.get([x_pos / SMOOTH, Y]) + 1.0) / 2.0 * HIGH
-    }
-}
-
-// Simple util function to round to set limit intervals
-fn round_to_limit(value: i32, limit: i32) -> i32 {
-    if limit < 0 {
-        return value - (value % limit.abs());
-    } else {
-        return value + limit - (value % limit);
-    }
-}
-
-// Clasic lerp function
-fn lerp(a: f64, b: f64, t: f64) -> f64 {
-    a + (b - a) * t
 }

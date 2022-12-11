@@ -4,6 +4,7 @@ mod game;
 mod gfx;
 mod particle;
 mod polygon;
+mod rand_tab;
 mod ship;
 mod surface;
 

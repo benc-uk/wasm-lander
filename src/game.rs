@@ -12,7 +12,7 @@ pub struct Game {
     ship: ship::Ship,
 }
 
-const GRAV: f64 = 0.0007;
+const GRAV: f64 = 0.00075;
 
 impl Game {
     pub fn new() -> Self {
@@ -31,10 +31,21 @@ impl Game {
         self.prev_gamepad = 0;
         self.ship = ship::Ship::new();
         self.surface = surface::Surface::new(self.frame_count);
+        self.ship.scale = 1.0;
     }
 
     pub fn update(&mut self) {
         let pressed = self.input();
+
+        if pressed & wasm4::BUTTON_UP != 0 {
+            self.ship.scale += 0.1;
+            self.surface.scale += 0.1
+        }
+
+        if pressed & wasm4::BUTTON_DOWN != 0 {
+            self.ship.scale -= 0.1;
+            self.surface.scale -= 0.1;
+        }
 
         if self.is_title_screen {
             if pressed & wasm4::BUTTON_1 != 0 || pressed & wasm4::BUTTON_2 != 0 {
@@ -63,8 +74,7 @@ impl Game {
 
         gfx::set_draw_color(0x2);
         wasm4::text(format!("F: {:.1}", self.ship.get_fuel()), 0, 0);
-        // wasm4::text(format!("S: {:.1}", self.ship.get_speed() * 100.0), 0, 10);
-        wasm4::text(format!("S: {:.1}", self.ship.get_pos().x), 0, 10);
+        wasm4::text(format!("S: {:.1}", self.ship.get_speed() * 100.0), 0, 10);
         wasm4::text(
             format!("A: {:.1}", self.ship.angle.to_degrees() + 90.0),
             90,
@@ -72,15 +82,11 @@ impl Game {
         );
 
         self.ship.update(GRAV);
-        self.surface.draw(self.ship.get_pos().x as i32 - 80);
+        self.surface
+            .draw(self.ship.get_pos().x as f32, self.ship.get_pos().y as f32);
         self.ship.draw(&self.surface);
 
         if self.ship.destroyed {
-            wasm4::trace(format!(
-                "ship at {} {}",
-                self.ship.get_pos().x,
-                self.ship.get_pos().y
-            ));
             wasm4::tone(160, 50, 50, wasm4::TONE_NOISE);
             self.is_game_over = true;
         }
@@ -96,11 +102,12 @@ impl Game {
         }
 
         if gamepad & wasm4::BUTTON_RIGHT != 0 {
-            self.ship.angle += 0.01;
+            // scale inversely to the ship's scale
+            self.ship.angle += 0.03 * (1.0 / self.ship.scale);
         }
 
         if gamepad & wasm4::BUTTON_LEFT != 0 {
-            self.ship.angle -= 0.01;
+            self.ship.angle -= 0.03 * (1.0 / self.ship.scale);
         }
 
         self.prev_gamepad = gamepad;

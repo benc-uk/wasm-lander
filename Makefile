@@ -4,6 +4,7 @@ WASM_PATH = target/wasm32-unknown-unknown/release
 OUT = dist
 BIN = bin
 TITLE = WASM Lander
+BINARYEN_VER = 111
 
 .PHONY: help install-tools build clean
 .DEFAULT_GOAL = build
@@ -53,8 +54,9 @@ watch: ## 👀 Run the game with reload on file change
 publish: build ## 🎁 Bundle for distribution (exe and HTML)
 	@figlet $@ || true
 	@mkdir -p dist
+	@rm -rf $(OUT)/cart-opt.wasm
 	@$(BIN)/wasm-opt $(WASM_PATH)/cart.wasm -o $(OUT)/cart-opt.wasm -Oz --strip-dwarf --strip-producers
-	@echo Optimised file is: $(shell stat --printf="%s" $(OUT)/cart-opt.wasm) bytes
+	@echo 💾 Optimised file is: $(shell stat --printf="%s" $(OUT)/cart-opt.wasm) bytes
 	@$(BIN)/w4 bundle $(OUT)/cart-opt.wasm --html $(OUT)/index.html --title "$(TITLE)" --icon-file assets/icon.png
 	@$(BIN)/w4 bundle $(OUT)/cart-opt.wasm --linux $(OUT)/game --title "$(TITLE)"
 	@$(BIN)/w4 bundle $(OUT)/cart-opt.wasm --windows $(OUT)/game.exe --title "$(TITLE)"
