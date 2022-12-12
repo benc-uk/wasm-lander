@@ -77,13 +77,13 @@ pub fn f64() -> f64 {
     }
 }
 
-pub fn i32(min: i32, max: i32) -> i32 {
-    unsafe {
-        SEED += 1;
-        if SEED >= RAND_TAB.len() {
-            SEED = 0;
-        }
-        let f = RAND_TAB[SEED];
-        (f * (max - min) as f64) as i32 + min
-    }
-}
+// pub fn i32(min: i32, max: i32) -> i32 {
+//     unsafe {
+//         SEED += 1;
+//         if SEED >= RAND_TAB.len() {
+//             SEED = 0;
+//         }
+//         let f = RAND_TAB[SEED];
+//         (f * (max - min) as f64) as i32 + min
+//     }
+// }

@@ -37,15 +37,12 @@ impl Game {
     pub fn update(&mut self) {
         let pressed = self.input();
 
-        if pressed & wasm4::BUTTON_UP != 0 {
-            self.ship.scale += 0.1;
-            self.surface.scale += 0.1
+        let mut scale = self.ship.pos.y / 50.0;
+        if scale > 2.5 {
+            scale = 2.5;
         }
-
-        if pressed & wasm4::BUTTON_DOWN != 0 {
-            self.ship.scale -= 0.1;
-            self.surface.scale -= 0.1;
-        }
+        self.ship.scale = scale;
+        self.surface.scale = scale as f32;
 
         if self.is_title_screen {
             if pressed & wasm4::BUTTON_1 != 0 || pressed & wasm4::BUTTON_2 != 0 {
@@ -102,12 +99,11 @@ impl Game {
         }
 
         if gamepad & wasm4::BUTTON_RIGHT != 0 {
-            // scale inversely to the ship's scale
-            self.ship.angle += 0.03 * (1.0 / self.ship.scale);
+            self.ship.angle += 0.03 * (0.8 / self.ship.scale);
         }
 
         if gamepad & wasm4::BUTTON_LEFT != 0 {
-            self.ship.angle -= 0.03 * (1.0 / self.ship.scale);
+            self.ship.angle -= 0.03 * (0.8 / self.ship.scale);
         }
 
         self.prev_gamepad = gamepad;

@@ -13,7 +13,7 @@ const PAD_COUNT: usize = 1;
 const PAD_SZ: f32 = 0.4;
 const SCREEN_SZ: i32 = 160;
 const Y: f32 = 183.8;
-const HIGH: f32 = 150.0;
+const HIGH: f32 = 160.0;
 const SMOOTH: f32 = 40.0;
 
 impl Surface {
@@ -39,7 +39,7 @@ impl Surface {
         for x in 0..SCREEN_SZ {
             let x_zoom = (x_offset / SMOOTH) + ((x as f32 - 80.0) / zoom);
             let mut h = ((self.noise.perlin(x_zoom, Y) + 1.0) / 2.0) * HIGH * self.scale;
-            h = h + y_offset - 50.0;
+            h = h + y_offset - (110.0 * self.scale);
 
             // check if we're on a pad
             let mut is_pad = false;
@@ -49,11 +49,12 @@ impl Surface {
                         / 2.0)
                         * HIGH
                         * self.scale;
-                    pad_h = pad_h + y_offset - 50.0;
+                    pad_h = pad_h + y_offset - (110.0 * self.scale);
                     h = pad_h;
                     is_pad = true;
                 }
             }
+
             self.heights[x as usize] = h as u8;
 
             gfx::set_draw_color(2);
