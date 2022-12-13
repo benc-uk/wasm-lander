@@ -1,4 +1,5 @@
 use crate::gfx;
+use crate::ship::Ship;
 use crate::surface::Surface;
 use crate::wasm4;
 
@@ -68,16 +69,17 @@ impl Polygon {
         }
     }
 
-    pub fn check_collision(&self, surface: &Surface) -> bool {
+    pub fn check_collision(&self, surface: &Surface, ship: &Ship) -> u8 {
         let mut i = 0;
         while i < self.points.len() {
             let p = self.points[i];
-            if surface.check_collision(p.x, p.y) {
-                return true;
+            let c = surface.check_collision(p.x, p.y, ship);
+            if c > 0 {
+                return c;
             }
             i += 1;
         }
-        false
+        0
     }
 
     pub fn clone(&self) -> Polygon {

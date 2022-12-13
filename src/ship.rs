@@ -5,8 +5,11 @@ use crate::rand_tab;
 use crate::surface::Surface;
 use crate::wasm4;
 
+const SHIP_Y: f64 = 50.0;
+
 pub struct Ship {
     pub destroyed: bool,
+    pub landed: bool,
     pub angle: f64,
     pub scale: f64,
 
@@ -49,13 +52,14 @@ impl Ship {
         Self {
             parts: parts_vec,
             pos: Point::new(200.0, 35.0),
-            velocity: Point::new(0.2, 0.0),
+            velocity: Point::new(0.22, 0.0),
             scale: 1.0,
             thrust: 0.002,
             engine_on: false,
             angle: 0.0,
-            fuel: 180.0,
+            fuel: 250.0,
             destroyed: false,
+            landed: false,
             particles: [Particle::new(0.0, 0.0, 0.0, 0.0, 0.0); 30],
         }
     }
@@ -89,11 +93,6 @@ impl Ship {
         self.pos
     }
 
-    pub fn stop(&mut self) {
-        self.velocity.x = 0.0;
-        self.velocity.y = 0.0;
-    }
-
     pub fn get_speed(&self) -> f64 {
         let mag = self.velocity.x * self.velocity.x + self.velocity.y * self.velocity.y;
         mag.sqrt()
@@ -110,7 +109,7 @@ impl Ship {
             let mut flame_point = self.parts.get(3).unwrap().clone();
             flame_point.scale(self.scale);
             flame_point.rotate(self.angle);
-            flame_point.translate(80.0, 80.0);
+            flame_point.translate(80.0, SHIP_Y);
 
             // find a dead particle and replace it
             for particle in self.particles.iter_mut() {
@@ -136,16 +135,22 @@ impl Ship {
 
     fn draw_part(&mut self, part: usize, surface: &Surface, color: u16) {
         let mut p = self.parts.get(part).unwrap().clone();
-        p.scale(0.75);
+
         p.scale(self.scale);
         p.rotate(self.angle);
 
         // Draw poly in screen coordinates
-        p.translate(80.0, 80.0);
+        p.translate(80.0, SHIP_Y);
 
         // Collision detection is done in screen coordinates now
-        if p.check_collision(surface) {
+        let c = p.check_collision(surface, self);
+        if c == 1 {
             self.destroyed = true;
+            return;
+        }
+
+        if c == 2 {
+            self.landed = true;
             return;
         }
 

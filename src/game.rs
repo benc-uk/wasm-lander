@@ -8,6 +8,7 @@ pub struct Game {
     prev_gamepad: u8,
     is_game_over: bool,
     is_title_screen: bool,
+    is_landed: bool,
     surface: surface::Surface,
     ship: ship::Ship,
 }
@@ -21,6 +22,7 @@ impl Game {
             prev_gamepad: 0,
             is_game_over: false,
             is_title_screen: true,
+            is_landed: false,
             surface: surface::Surface::new(0),
             ship: ship::Ship::new(),
         }
@@ -28,6 +30,7 @@ impl Game {
 
     pub fn new_game(&mut self) {
         self.is_game_over = false;
+        self.is_landed = false;
         self.prev_gamepad = 0;
         self.ship = ship::Ship::new();
         self.surface = surface::Surface::new(self.frame_count);
@@ -67,6 +70,16 @@ impl Game {
             return;
         }
 
+        if self.is_landed {
+            if pressed & wasm4::BUTTON_1 != 0 {
+                self.is_title_screen = true;
+            }
+
+            gfx::shadow_text("YOU LANDED!\nWELL DONE!", 30, 60, 0x4, 0x1);
+
+            return;
+        }
+
         self.frame_count += 1;
 
         gfx::set_draw_color(0x2);
@@ -87,6 +100,11 @@ impl Game {
             wasm4::tone(160, 50, 50, wasm4::TONE_NOISE);
             self.is_game_over = true;
         }
+
+        if self.ship.landed {
+            wasm4::tone(260, 80, 50, wasm4::TONE_TRIANGLE);
+            self.is_landed = true;
+        }
     }
 
     pub fn input(&mut self) -> u8 {
@@ -99,11 +117,11 @@ impl Game {
         }
 
         if gamepad & wasm4::BUTTON_RIGHT != 0 {
-            self.ship.angle += 0.03 * (0.8 / self.ship.scale);
+            self.ship.angle += 0.03 * (0.6 / self.ship.scale);
         }
 
         if gamepad & wasm4::BUTTON_LEFT != 0 {
-            self.ship.angle -= 0.03 * (0.8 / self.ship.scale);
+            self.ship.angle -= 0.03 * (0.6 / self.ship.scale);
         }
 
         self.prev_gamepad = gamepad;
