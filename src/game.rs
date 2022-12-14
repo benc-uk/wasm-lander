@@ -11,9 +11,10 @@ pub struct Game {
     is_landed: bool,
     surface: surface::Surface,
     ship: ship::Ship,
+    score: u32,
 }
 
-const GRAV: f64 = 0.00075;
+const GRAV: f64 = 0.00070;
 
 impl Game {
     pub fn new() -> Self {
@@ -25,31 +26,33 @@ impl Game {
             is_landed: false,
             surface: surface::Surface::new(0),
             ship: ship::Ship::new(),
+            score: 0,
         }
     }
 
-    pub fn new_game(&mut self) {
+    pub fn new_game(&mut self, score: u32) {
         self.is_game_over = false;
         self.is_landed = false;
         self.prev_gamepad = 0;
         self.ship = ship::Ship::new();
         self.surface = surface::Surface::new(self.frame_count);
         self.ship.scale = 1.0;
+        self.score = score;
     }
 
     pub fn update(&mut self) {
         let pressed = self.input();
 
         let mut scale = self.ship.pos.y / 50.0;
-        if scale > 2.5 {
-            scale = 2.5;
+        if scale > 2.0 {
+            scale = 2.0;
         }
         self.ship.scale = scale;
         self.surface.scale = scale as f32;
 
         if self.is_title_screen {
             if pressed & wasm4::BUTTON_1 != 0 || pressed & wasm4::BUTTON_2 != 0 {
-                self.new_game();
+                self.new_game(0);
                 self.is_title_screen = false;
             }
 
@@ -65,17 +68,30 @@ impl Game {
                 self.is_title_screen = true;
             }
 
-            gfx::shadow_text("YOU CRASHED!", 30, 60, 0x4, 0x1);
-            gfx::shadow_text("GAME OVER!", 40, 70, 0x4, 0x1);
+            gfx::shadow_text(&self.ship.crash_reason, 10, 30, 0x4, 0x2);
+            gfx::shadow_text("GAME OVER!", 40, 70, 0x4, 0x2);
+            gfx::shadow_text(format!("Score: {}", self.score).as_str(), 40, 90, 0x4, 0x2);
             return;
         }
 
         if self.is_landed {
+            let score = self.score + self.ship.get_fuel() as u32;
+
             if pressed & wasm4::BUTTON_1 != 0 {
-                self.is_title_screen = true;
+                self.new_game(score);
+                self.is_landed = false;
             }
 
-            gfx::shadow_text("YOU LANDED!\nWELL DONE!", 30, 60, 0x4, 0x1);
+            gfx::shadow_text("GREAT LANDING!", 30, 30, 0x4, 0x2);
+            gfx::shadow_text(
+                format!("Fuel left: {:.1}", self.ship.get_fuel()).as_str(),
+                20,
+                50,
+                0x3,
+                0x2,
+            );
+
+            gfx::shadow_text(format!("Score: {}", score).as_str(), 20, 70, 0x3, 0x2);
 
             return;
         }
@@ -83,12 +99,26 @@ impl Game {
         self.frame_count += 1;
 
         gfx::set_draw_color(0x2);
-        wasm4::text(format!("F: {:.1}", self.ship.get_fuel()), 0, 0);
-        wasm4::text(format!("S: {:.1}", self.ship.get_speed() * 100.0), 0, 10);
-        wasm4::text(
-            format!("A: {:.1}", self.ship.angle.to_degrees() + 90.0),
+        gfx::shadow_text(
+            format!("F: {:.1}", self.ship.get_fuel()).as_str(),
+            0,
+            0,
+            0x3,
+            0x2,
+        );
+        gfx::shadow_text(
+            format!("S: {:.1}", self.ship.get_speed() * 100.0).as_str(),
+            0,
+            10,
+            0x3,
+            0x2,
+        );
+        gfx::shadow_text(
+            format!("A: {:.2}", self.ship.angle.to_degrees() + 90.0).as_str(),
             90,
             0,
+            0x3,
+            0x2,
         );
 
         self.ship.update(GRAV);
@@ -117,11 +147,11 @@ impl Game {
         }
 
         if gamepad & wasm4::BUTTON_RIGHT != 0 {
-            self.ship.angle += 0.03 * (0.6 / self.ship.scale);
+            self.ship.angle += 0.03 * (0.5 / self.ship.scale);
         }
 
         if gamepad & wasm4::BUTTON_LEFT != 0 {
-            self.ship.angle -= 0.03 * (0.6 / self.ship.scale);
+            self.ship.angle -= 0.03 * (0.5 / self.ship.scale);
         }
 
         self.prev_gamepad = gamepad;

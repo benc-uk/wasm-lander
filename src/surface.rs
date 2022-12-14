@@ -12,7 +12,7 @@ pub struct Surface {
 }
 
 const PAD_COUNT: usize = 4;
-const PAD_SZ: f32 = 0.4;
+const PAD_SZ: f32 = 0.5;
 const SCREEN_SZ: i32 = 160;
 const SCREEN_SZ_H: i32 = 80;
 const Y: f32 = 183.8;
@@ -76,6 +76,11 @@ impl Surface {
     }
 
     pub fn check_collision(&self, x: f64, y: f64, ship: &Ship) -> u8 {
+        // 0 is no collision
+        // 1 is landed OK
+        // 2+ is a crash
+        // 3+ is bad landing
+
         let mut h = self.heights[x as usize];
         let mut is_pad = false;
         if h < 0 {
@@ -87,15 +92,23 @@ impl Surface {
             // Check if we're on a pad
             if is_pad {
                 let ang = ship.angle.to_degrees() + 90.0;
-                //wasm4::trace(format!("PAD CHEKC: ANG:{}", ang.abs()));
-                if ship.get_speed() < 20.0 && ang.abs() < 2.0 {
-                    //wasm4::trace(format!("LANDED: ANG:{}", ang.abs()));
-                    return 2;
+                let speed = ship.get_speed() * 100.0;
+
+                // Criteria for a safe & good landing
+                if speed > 10.0 {
+                    return 3;
                 }
+                if ang.abs() > 1.1 {
+                    return 4;
+                }
+                if ship.get_velocity().x > 0.02 {
+                    return 5;
+                }
+
                 return 1;
             }
 
-            return 1;
+            return 2;
         }
 
         return 0;

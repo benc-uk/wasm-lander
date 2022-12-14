@@ -9,6 +9,7 @@ const SHIP_Y: f64 = 50.0;
 
 pub struct Ship {
     pub destroyed: bool,
+    pub crash_reason: String,
     pub landed: bool,
     pub angle: f64,
     pub scale: f64,
@@ -51,14 +52,15 @@ impl Ship {
 
         Self {
             parts: parts_vec,
-            pos: Point::new(200.0, 35.0),
-            velocity: Point::new(0.22, 0.0),
+            pos: Point::new(200.0, 25.0),
+            velocity: Point::new(0.29, 0.0),
             scale: 1.0,
             thrust: 0.002,
             engine_on: false,
             angle: 0.0,
             fuel: 250.0,
             destroyed: false,
+            crash_reason: String::new(),
             landed: false,
             particles: [Particle::new(0.0, 0.0, 0.0, 0.0, 0.0); 30],
         }
@@ -91,6 +93,10 @@ impl Ship {
 
     pub fn get_pos(&self) -> Point {
         self.pos
+    }
+
+    pub fn get_velocity(&self) -> Point {
+        self.velocity
     }
 
     pub fn get_speed(&self) -> f64 {
@@ -144,12 +150,25 @@ impl Ship {
 
         // Collision detection is done in screen coordinates now
         let c = p.check_collision(surface, self);
-        if c == 1 {
+        if c >= 2 {
             self.destroyed = true;
+            if c == 2 {
+                self.crash_reason = String::from("Crashed into the\nlunar surface");
+            }
+            if c == 3 {
+                self.crash_reason = String::from("Landed too fast!");
+            }
+            if c == 4 {
+                self.crash_reason = String::from("Landed at too\nsteep an angle");
+            }
+            if c == 5 {
+                self.crash_reason = String::from("Sheared landing\nlegs");
+            }
+
             return;
         }
 
-        if c == 2 {
+        if c == 1 {
             self.landed = true;
             return;
         }
