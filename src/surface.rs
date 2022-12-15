@@ -21,6 +21,7 @@ const SMOOTH: f32 = 40.0;
 
 impl Surface {
     pub fn new(seed: u32) -> Self {
+        rand_tab::seed(seed as usize);
         let mut surface = Surface {
             noise: NoiseGenerator::new(seed as u64),
             pad_locations: [0.0; PAD_COUNT],
@@ -69,6 +70,9 @@ impl Surface {
                 wasm4::rect(x, SCREEN_SZ - h as i32, 1, 1);
                 wasm4::rect(x, SCREEN_SZ + 2 - h as i32, 1, 1);
 
+                gfx::set_draw_color(2);
+                wasm4::rect(x, 18 + (x % 3), 1, 1);
+
                 // Use negative heights to indicate a pad
                 self.heights[x as usize] = -h as i16;
             }
@@ -78,7 +82,7 @@ impl Surface {
     pub fn check_collision(&self, x: f64, y: f64, ship: &Ship) -> u8 {
         // 0 is no collision
         // 1 is landed OK
-        // 2+ is a crash
+        // 2 is a crash
         // 3+ is bad landing
 
         let mut h = self.heights[x as usize];

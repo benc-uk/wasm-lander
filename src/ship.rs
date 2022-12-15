@@ -52,7 +52,7 @@ impl Ship {
 
         Self {
             parts: parts_vec,
-            pos: Point::new(200.0, 25.0),
+            pos: Point::new(200.0, 15.0),
             velocity: Point::new(0.29, 0.0),
             scale: 1.0,
             thrust: 0.002,
@@ -71,12 +71,17 @@ impl Ship {
             self.velocity.x += self.thrust * self.angle.cos();
             self.velocity.y += self.thrust * self.angle.sin();
             self.fuel -= 0.2;
-            wasm4::tone(100, 4, 20, wasm4::TONE_NOISE);
+            wasm4::tone((self.fuel + 80.0) as u32, 4, 20, wasm4::TONE_NOISE);
         }
 
         self.velocity.y += gravity;
         self.pos.x += self.velocity.x;
         self.pos.y += self.velocity.y;
+
+        if self.pos.y < 10.0 {
+            self.destroyed = true;
+            self.crash_reason = String::from("You zoomed off\ninto space!");
+        }
     }
 
     pub fn set_engines(&mut self, state: bool) {
@@ -125,7 +130,7 @@ impl Ship {
                         flame_point.points[0].y,
                         (self.angle - 3.14) + ((rand_tab::f64() - 0.5) * 0.6),
                         1.2 + rand_tab::f64(),
-                        (6.0 + rand_tab::f64() * 3.0) * self.scale,
+                        (6.0 + rand_tab::f64() * 5.0) * self.scale,
                     );
                     break;
                 }

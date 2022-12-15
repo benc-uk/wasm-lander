@@ -4,7 +4,6 @@ WASM_PATH = target/wasm32-unknown-unknown/release
 OUT = dist
 BIN = bin
 TITLE = WASM Lander
-BINARYEN_VER = 111
 
 .PHONY: help install-tools build clean
 .DEFAULT_GOAL = build
