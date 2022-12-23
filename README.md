@@ -2,12 +2,26 @@
 
 A game written in Rust for the [WASM-4](https://wasm4.org) fantasy console.
 
-![](./assets/screenshot.png)
+<img src="./assets/screen1.png" width="400px"/>
+<img src="./assets/screen2.png" width="400px"/>
 
+Objective:
 
-The game is published as HTML and hosted on GitHub Pages  
-### [🌚 Play live version!](http://code.benco.io/wasm-lander/)
+Land on one of the several landing pads on the lunar surface. However you must land safely, ensure your speed is low (10 or less) and you are landing straight as possible! But be careful, your fuel is limited!
 
+Controls:
+
+- Rotate ship: Left & right arrows
+- Fire thrusters: X 
+
+## Play!
+
+The game is published as a WASM bundle with static HTML& JS and hosted on GitHub Pages, and is playable on mobile and standard browsers
+
+[![Button]][Link]
+
+[Link]: https://code.benco.io/wasm-lander/
+[Button]: https://img.shields.io/badge/Play%20The%20GAME!-37ff79?style=for-the-badge&logo=airplayvideo&logoColor=black
 
 ## Getting Started
 
